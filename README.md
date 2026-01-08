@@ -15,13 +15,13 @@ Initial Installations:
 
 4) ngrok
 
-## Initial Setup (Step-by-Step)
+## Initial Setup (Step-by-Step) - These are steps suggesting intially how postgres connected to Hevo
 1. Docker Desktop:
    Commands - 
    docker run --name hevo-postgres -e POSTGRES_PASSWORD=hevo123 -p 5432:5432 -d postgres:15 (logical replication not enabled, so removed and added again) <br>
    docker stop hevo-postgres <br>
    docker rm hevo-postgres <br>
-   docker run -d --name hevo-postgres -p 5432:5432 -e POSTGRES_PASSWORD=hevo123 postgres:15 -c wal_level=logical -c max_wal_senders=5 -c max_replication_slots=5 <br>
+   docker run -d --name hevo-postgres -p 5432:5432 -e POSTGRES_PASSWORD=hevo123 postgres:15 -c wal_level=logical -c max_wal_senders=10 -c max_replication_slots=10 <br>
 
    Verification command - docker exec -it hevo-postgres psql -U postgres -d postgres  <br>
    command 2 - docker ps
@@ -112,24 +112,24 @@ UNION ALL SELECT 'feedback', COUNT(*) FROM feedback; <br>
 
 ### 4. Hevo Pipeline Creation
 **Assessment - 1**
-- Source: PostgreSQL (ngrok tcp://0.tcp.in.ngrok.io:16619) <br>
+- Source: PostgreSQL (ngrok tcp://0.tcp.in.ngrok.io:10030) <br>
 - Username: hevo-postgress and Password: hevo123 <br>
 - Mode: LOGICAL REPLICATION and Tables: customers, orders, feedback  <br>
 - Destination: Snowflake HEVO_DB <br>
 -Pipeline Name and Info: Postgres SQL Source <br>
 
 Host: 0.tcp.in.ngrok.io
-Port: 16619;
+Port: 10030;
 User: postgres;
 Merge Tables: true;
 Database: postgres;
 Pipeline Mode: WAL;
 Load historical data: true;
-Replication Slot: hevo_slot_1767706311065;
+Replication Slot: hevo_slot_1767859813818;
 Output plugin: test_decoding;
 Replicate JSON Fields: Replicate JSON fields to JSON columns;
 Include New Objects: true; <br>
-- Pipeline ID: [#4] | Team: Jayanth-hevo | URL: https://in.hevodata.com/pipeline/4/overview [Screenshots/Assessment-1-Pipeline.png] <br>
+- Pipeline ID: [#9] | Team: Jayanth-hevo | URL: https://in.hevodata.com/pipeline/4/overview [Screenshots/Assessment-1-Pipeline.png] <br>
 
 **Assessment - 2**
 - Source: PostgreSQL (ngrok tcp://0.tcp.in.ngrok.io:16619) <br>
@@ -152,7 +152,7 @@ Include New Objects: true; <br> <br>
 
 - Pipeline ID: [#6] | Team: Jayanth-hevo | URL: https://in.hevodata.com/pipeline/6/overview [Screenshots/Assessment-2-Pipeline.png] <br>
 
-### 5. Transformations (Python Script - Assessment 1)
+### 5. Transformations (Python Script - Assessment 1) - Went with python as I was not familiar with drag and drop
 
 Please see this google document for transformation code: https://docs.google.com/document/d/1VrM77M0qohcc3pEtG0DAlkkvs8bUb_RenAZlMl2faww/edit?usp=sharing <br>
 
@@ -170,3 +170,38 @@ I have created a google document for 4 transformation queries used for Models cr
 - Final Resultant Model
 
 ### 6. Snowflake Validation 
+**Assessment - 1**
+
+SELECT * FROM order_events; -- This table is created by python transformation script used for assessment 1 <br> [Screenshots/Assessment-1-Order-Events.png]
+
+Select * from order_events
+order by __hevo__ingested_at DESC
+LIMIT 200; -- Loaded a couple of times to check transformation, So limiting the records to 200
+
+SELECT * from customers <br>
+where username is not null; -- This table now has one extra colum for username - Python script transformation result <br> [Screensots/Assessment-1-Username-Field.png] <br>
+
+SELECT COUNT(*) from CUSTOMERS; -- Displays the count
+
+**Assessment - 2**
+
+SELECT * FROM CLEANED_CUSTOMERS;<br>
+SELECT * FROM CLEANED_ORDERS;<br>
+SELECT * FROM CLEANED_PRODUCTS;<br>
+SELECT * FROM CLEANED_FINAL_RESULT;<br>
+
+The above queries will show the transformed results of 4 models created respectively. <br> [In the Repo, Screenshots folder, Look at the screenshot names Assessment-2-Cleaned_Customers.png, Assessment-2-Cleaned_Orders.png Assessment-2-Cleaned_Products.png Assessment-2-Cleaned_Final_Result.png] <br>
+
+### 7. Assumptions made - Assessment - 1
+
+1. For status column in orders relation or table, assumed varchar is easier to work with in SQL because we have various string functions.
+
+### 8. Challenges/issues faced
+
+1. I Initially, connected postgres with hevo and created a test_table to check whether the data is reflecting actively in Snowflake, It was reflecting<br>
+So, created the 3 tables for assessment 1 and wrote the transformation script and deployed -> Still the transformations were not applied. So, I had to <br>
+re load the historical data again and manually load the events for each relation or table in the question
+2. Struggled a lot with Event class's main methods and their definitions. I tried to clone the event once but number of parameters were not matching, So, re wrote the <br>
+transformation script once again
+3. Returning multiple dictionaries logic in the first assessment transformation script was challenging.
+4. Struggled to understand the UI and options of Hevodata on the staring day.
