@@ -205,3 +205,8 @@ re load the historical data again and manually load the events for each relation
 transformation script once again
 3. Returning multiple dictionaries logic in the first assessment transformation script was challenging.
 4. Struggled to understand the UI and options of Hevodata on the staring day.
+
+### 9. Loom Video links:
+ 1. Assessment 1 - https://www.loom.com/share/2a37326faf384c51851d8ffc55aa41b9
+ 2. Assessment 2 - https://www.loom.com/share/b792d392cade40dea52d95666c6f04fa
+ 3. A general challenge faced during assessment - https://www.loom.com/share/d1ace4cfb2424e6aa160014c4fe9505a
